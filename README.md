@@ -1,219 +1,177 @@
-# Assisted-Living Risk-Alert System
+# Assisted Living Facility (ALF) Incident Risk Prediction System
+
+This repository contains the code for an Assisted Living Facility (ALF) Incident Risk Prediction System. The system aims to predict the likelihood of an incident occurring the next day for residents in an ALF, leveraging various patient vital signs, demographic information, and historical data.
+
 
 ## Project Overview
 
-The Assisted-Living Risk-Alert System is a machine learning solution designed to predict health incidents in assisted living facilities before they occur. By analyzing daily resident data including vital signs, medication adherence, and medical history, the system enables proactive care interventions that can significantly reduce emergency situations.
+The primary goal of this project is to develop a predictive model that can identify residents at high risk of experiencing an incident on the following day. Early identification of such risks can enable proactive interventions, improving resident safety and quality of care in assisted living facilities. The system utilizes machine learning techniques, including CatBoost and LightGBM, along with robust data preprocessing and feature engineering.
 
-### Key Achievements
-- **68% recall rate** - Successfully identifies 2 out of 3 future health incidents
-- **30% reduction** in next-day incidents through targeted interventions
-- **Real-time monitoring** capability for 500+ residents across 5 facilities
-- **Actionable insights** that integrate seamlessly into existing care workflows
+## Features
 
----
+*   **Data Loading and Initial Exploration**: Reads and displays basic information about the synthetic ALF dataset.
+*   **Missing Value Visualization**: Heatmap to visualize the pattern of missing values in the dataset.
+*   **Incident Rate Analysis**: Calculates and displays the overall incident rate.
+*   **Numerical Feature Analysis**:
+    *   Histograms to show distributions of numerical features (age, heart rate, blood pressure, temperature, medication adherence).
+    *   Box plots for outlier detection in numerical features.
+    *   Pearson correlation heatmap for numerical features.
+*   **Categorical Feature Analysis**: Bar plot showing mean incident rate by diagnosis.
+*   **Time-Series Analysis**: Line plot of weekly incident rates.
+*   **Patient-Level Analysis**: Histograms showing the distribution of per-patient incident rates and the count of patients by the number of incidents.
+*   **Statistical Tests**: Chi-squared test to assess the relationship between diagnosis and incident occurrence.
+*   **Feature Engineering**:
+    *   **Rolling Statistics**: Calculates rolling mean and standard deviation for vital signs over 1, 3, and 7 days.
+    *   **Daily Deltas**: Computes daily changes in vital signs.
+    *   **Risk Proxies**: Creates `age_group` and `med_adherence_bucket` features.
+    *   **Interaction Flags**: Generates `high_risk_diag` and `elderly` binary flags.
+*   **Data Preprocessing Pipeline**:
+    *   **Imputation**: Uses `IterativeImputer` (MICE) for numerical features and `SimpleImputer` with a median strategy within the `ColumnTransformer`.
+    *   **Scaling**: `StandardScaler` for numerical features.
+    *   **Encoding**: `OneHotEncoder` for categorical features.
+*   **Data Splitting**: Employs `GroupShuffleSplit` to ensure patient-wise separation across training, validation, and test sets, preventing data leakage.
+*   **Imbalanced Data Handling**: Utilizes SMOTE (Synthetic Minority Over-sampling Technique) on the training data to address class imbalance.
+*   **Model Training**: Trains CatBoost and LightGBM classifiers.
+*   **Hyperparameter Tuning**: Implements `GridSearchCV` with a custom scoring function (Average Precision Score) to find optimal hyperparameters for CatBoost and LightGBM.
+*   **Model Evaluation**: Reports various metrics including Accuracy, Precision, Recall, F1-score, ROC-AUC, and PR-AUC on validation and test sets.
+*   **Visualization of Model Performance**: ROC and Precision-Recall curves for the best performing model.
 
-## Business Problem
+## Data Source
 
-### Challenge
-Assisted living facilities face the critical challenge of identifying residents at risk of health incidents before they occur. Traditional reactive approaches often result in:
-- Emergency hospitalizations that could have been prevented
-- Increased healthcare costs and resource strain
-- Reduced quality of life for residents
-- Higher liability and regulatory compliance risks
+The project uses a synthetic dataset named `alf_synthetic.csv`. This dataset is downloaded from Kaggle via `kagglehub`.
 
-### Solution Impact
-Our predictive model transforms care delivery from reactive to proactive by:
-- Enabling early intervention through 24-hour risk forecasting
-- Providing clear, actionable alerts for caregiving staff
-- Reducing emergency incidents by approximately 30%
-- Maintaining high recall (68%) to minimize missed critical cases
+## Installation
 
----
+To set up the environment and run the code, follow these steps:
 
-## Dataset Description
+1.  **Clone the repository**:
+    ```bash
+    git clone <repository_url>
+    cd Assisted-Living-Risk-System
+    ```
 
-### Data Sources
-- **Total Records**: 60,000 daily resident observations
-- **Population**: 500 residents across 5 assisted living facilities
-- **Time Period**: 18 months of historical data
-- **Update Frequency**: Daily data collection and model scoring
+2.  **Install dependencies**:
+    The project uses `uv pip` and `pip` for package management. Ensure you have `uv` installed, or replace `uv pip install` with `pip install`.
 
-### Raw Variables (12 features)
-| Category | Variables | Description |
-|----------|-----------|-------------|
-| **Vital Signs** | Heart Rate, Blood Pressure (Systolic/Diastolic), Temperature | Daily measurements taken during routine checks |
-| **Medications** | Adherence Score, Medication Count | Compliance tracking and medication complexity |
-| **Demographics** | Age, Gender, Length of Stay | Resident characteristics and tenure |
-| **Medical History** | Primary Diagnosis, Comorbidity Count | Clinical background and risk factors |
-| **Behavioral** | Activity Level, Sleep Quality | Daily living indicators |
+    ```bash
+    !uv pip install -q scikit-learn==1.6.1 imbalanced-learn --system
+    !pip install -q -U scikit-learn imbalanced-learn
+    ```
+    The full list of required libraries can be found in the imports section of the notebook:
+    *   `pandas`
+    *   `numpy`
+    *   `seaborn`
+    *   `matplotlib`
+    *   `catboost`
+    *   `lightgbm`
+    *   `imblearn`
+    *   `sklearn` (various modules for imputation, preprocessing, pipelines, model selection, metrics)
+    *   `scipy`
+    *   `torch` (checked for CUDA availability)
+    *   `tensorflow` (checked for GPU availability)
+    *   `joblib`
 
-### Target Variable
-- **Health Incident**: Binary classification (Yes/No)
-- **Time Horizon**: Next 24 hours
-- **Incident Rate**: 5% (highly imbalanced dataset)
-- **Incident Types**: Falls, cardiac events, respiratory distress, severe medication reactions
+3.  **Download the dataset**:
+    The notebook automatically downloads the `alf_synthetic.csv` file using `gdown` or reads it from the Kaggle input path.
+    ```python
+    !gdown '13t-mmHaCNOin0b2_6_o_TG2CS3nKxiPT' -O alf_synthetic.csv
+    # or for Kaggle environment:
+    # df = pd.read_csv("/kaggle/input/alf-synthetic/alf_synthetic.csv", parse_dates=["date"])
+    ```
 
----
+## Usage
 
-## Technical Architecture
+The code is provided as a Jupyter Notebook (`Assisted-Living Risk system.py`). You can run it in a Jupyter environment (e.g., Jupyter Lab, VS Code with Jupyter extension, Google Colab, or Kaggle Notebooks).
 
-### Data Pipeline
-```
-Raw Data Sources → Data Validation → Feature Engineering → Model Training → Prediction Pipeline → Alert System
-```
+1.  **Open the notebook**:
+    ```bash
+    jupyter notebook "main.ipynb"
+    ```
+2.  **Run all cells**: Execute the cells sequentially to perform data loading, exploration, feature engineering, model training, and evaluation.
 
-### Infrastructure Requirements
-- **Storage**: PostgreSQL database for historical data, Redis for real-time caching
-- **Processing**: Python-based ETL pipeline with Apache Airflow scheduling
-- **ML Framework**: Scikit-learn, LightGBM, SHAP for interpretability
-- **Monitoring**: MLflow for experiment tracking and model versioning
-- **Deployment**: Docker containers with REST API endpoints
+## Model Training and Evaluation
 
----
-
-## Feature Engineering
-
-### Engineered Features (24 total features)
-
-#### Time-Series Features
-- **3-day rolling means**: Heart rate, blood pressure, temperature
-- **3-day rolling deltas**: Change from baseline for each vital sign
-- **Trend indicators**: Increasing/decreasing patterns over observation window
-
-#### Categorical Transformations
-- **Age groups**: Binned into clinically relevant ranges (65-74, 75-84, 85+)
-- **Medication adherence buckets**: Low (<70%), Medium (70-89%), High (90%+)
-- **High-risk diagnosis flags**: Binary indicators for dementia, CHF, Parkinson's, diabetes
-
-#### Interaction Features
-- **Age × diagnosis interactions**: Combined risk factors
-- **Medication complexity score**: Count × adherence interaction
-- **Comorbidity burden**: Weighted sum of multiple conditions
-
-### Feature Selection Process
-1. **Correlation analysis** to remove redundant features
-2. **Recursive feature elimination** with cross-validation
-3. **SHAP-based importance ranking** for interpretability
-4. **Clinical validation** with domain experts
-
----
-
-## Model Development
+The system trains and evaluates two gradient boosting models: CatBoost and LightGBM.
 
 ### Data Splitting Strategy
-- **Patient-wise split** to prevent data leakage
-- **Training set**: 80% (48k records, ~400 residents)
-- **Validation set**: 10% (6k records, ~50 residents)  
-- **Test set**: 10% (6k records, ~50 residents)
 
-### Class Imbalance Handling
-- **SMOTE (Synthetic Minority Oversampling)** applied to training set only
-- **Stratified sampling** to maintain incident rate across splits
-- **Cost-sensitive learning** with adjusted class weights
+The data is split into training, validation, and test sets using `GroupShuffleSplit` to ensure that data from the same `patient_id` does not appear in different splits. This prevents data leakage and provides a more realistic evaluation of the model's generalization ability.
 
-### Algorithm Benchmarking
-| Algorithm | PR-AUC | Recall | Precision | F1-Score | Training Time |
-|-----------|--------|--------|-----------|----------|---------------|
-| **LightGBM** | **0.312** | **0.68** | **0.23** | **0.34** | **2.3 min** |
-| XGBoost | 0.298 | 0.65 | 0.21 | 0.32 | 4.1 min |
-| CatBoost | 0.285 | 0.63 | 0.20 | 0.30 | 6.2 min |
-| Random Forest | 0.271 | 0.61 | 0.19 | 0.29 | 3.8 min |
-| Gradient Boosting | 0.254 | 0.59 | 0.18 | 0.28 | 5.7 min |
-| Logistic Regression | 0.198 | 0.52 | 0.14 | 0.22 | 0.8 min |
+*   **Train**: 80% of patients
+*   **Validation**: 10% of patients
+*   **Test**: 10% of patients
 
-### Hyperparameter Optimization
-- **Bayesian optimization** with 100 iterations
-- **5-fold cross-validation** for robust evaluation
-- **Early stopping** to prevent overfitting
-- **Key parameters optimized**: learning_rate, num_leaves, feature_fraction, min_child_samples
+### Preprocessing Pipeline
 
----
+A `ColumnTransformer` is used to apply different preprocessing steps to numerical and categorical features:
 
-## Results & Performance
+*   **Numerical Features**:
+    *   `SimpleImputer(strategy="median")`: Fills missing numerical values with the median.
+    *   `StandardScaler()`: Scales numerical features to have zero mean and unit variance.
+*   **Categorical Features**:
+    *   `OneHotEncoder(handle_unknown="ignore")`: Converts categorical variables into a one-hot encoded numerical representation.
 
-### Model Performance Metrics
-- **PR-AUC**: 0.312 (significantly better than random baseline of 0.05)
-- **Recall**: 0.68 (captures 68% of actual incidents)
-- **Precision**: 0.23 (23% of predictions are true positives)
-- **Specificity**: 0.85 (correctly identifies 85% of non-incident cases)
+### Imbalance Handling
 
-### Business Impact Metrics
-- **Alert Volume**: ~15 alerts per day across all facilities (manageable workload)
-- **Intervention Success Rate**: 30% reduction in incidents for residents receiving targeted care
-- **Cost Savings**: Estimated $2,400 per prevented hospitalization
-- **ROI**: 4.2x return on implementation investment within first year
+Due to the low incident rate, the dataset is highly imbalanced. SMOTE (Synthetic Minority Over-sampling Technique) is applied to the training data to generate synthetic samples of the minority class, balancing the dataset for model training.
 
----
+### Models
 
-## Key Insights
+*   **CatBoostClassifier**:
+    *   Initial parameters: `iterations=400`, `learning_rate=0.05`, `depth=6`, `loss_function='Logloss'`, `eval_metric='AUC'`, `verbose=0`, `random_seed=42`.
+    *   Class weights are manually set to re-balance the classes: `{0:1, 1:int(len(y_train_bal)/sum(y_train_bal))}`.
+*   **LGBMClassifier**:
+    *   Initial parameters: `n_estimators=400`, `learning_rate=0.05`, `max_depth=-1`, `num_leaves=63`, `objective='binary'`, `metric='auc'`, `class_weight='balanced'`, `random_state=42`, `verbosity=-1`.
 
-### Top Risk Drivers (SHAP Analysis)
+### Hyperparameter Tuning (Grid Search)
 
-#### 1. 3-Day Heart Rate Rolling Mean (Importance: 0.28)
-- **Clinical Significance**: Persistent elevation indicates cardiovascular stress
-- **Threshold**: ≥5 bpm above individual baseline triggers high-risk classification
-- **Actionable**: Immediate vital sign monitoring and physician consultation
+`GridSearchCV` is used to fine-tune the hyperparameters for both CatBoost and LightGBM. The scoring metric for grid search is `average_precision_score` (PR-AUC), which is more suitable for imbalanced datasets than accuracy or ROC-AUC.
 
-#### 2. High-Risk Diagnosis Flag (Importance: 0.21)
-- **Conditions**: Dementia, Congestive Heart Failure, Parkinson's Disease
-- **Risk Multiplier**: 2x baseline incident probability
-- **Management**: Enhanced monitoring protocols and specialized care plans
+**CatBoost Parameter Grid**:
+\$$
+\begin{cases}
+\text{clf\_\_iterations}: [200, 400, 600] \\
+\text{clf\_\_learning\_rate}: [0.03, 0.05, 0.07] \\
+\text{clf\_\_depth}: [4, 6, 8] \\
+\text{clf\_\_l2\_leaf\_reg}: [1, 3, 5] \\
+\text{clf\_\_border\_count}: [32, 64]
+\end{cases}
+\$$
 
-#### 3. Medication Adherence Score (Importance: 0.18)
-- **Scale**: 0-1 continuous score based on dose timing and completion
-- **Impact**: Every 0.1 decrease correlates with 12% increased risk
-- **Intervention**: Automated dispensing systems and adherence coaching
+**LightGBM Parameter Grid**:
+\$$
+\begin{cases}
+\text{clf\_\_n\_estimators}: [200, 400, 600] \\
+\text{clf\_\_learning\_rate}: [0.03, 0.05, 0.07] \\
+\text{clf\_\_max\_depth}: [-1, 4, 6] \\
+\text{clf\_\_num\_leaves}: [31, 63, 127] \\
+\text{clf\_\_min\_child\_samples}: [5, 15, 30] \\
+\text{clf\_\_subsample}: [0.8, 1.0] \\
+\text{clf\_\_colsample\_bytree}: [0.8, 1.0]
+\end{cases}
+\$$
 
-### Additional Insights
-- **Age factor**: Risk increases exponentially after age 85
-- **Seasonal patterns**: 23% higher incident rate during winter months
-- **Facility variations**: Location-specific risk factors identified
-- **Time of day**: 67% of incidents occur between 6 PM - 6 AM
+## Results
 
----
+The final evaluation is performed on the unseen test set using the best model identified through grid search. The key metrics reported are:
 
-## Implementation Recommendations
+*   **Accuracy : 0.9383**
+*   **Log-loss : 0.2302**
+*   **Precision : 0.0000**
+*   **Recall  : 0.0000**
+*   **F1       : 0.0000**
+*   **ROC-AUC  : 0.6019**
+*   **PR-AUC   : 0.0951**
 
-### 1. Daily Vitals Dashboard
-**Objective**: Real-time monitoring with automated alerting
+The summary indicates that while high accuracy might be achieved, the PR-AUC values are more indicative of performance on imbalanced datasets. The LightGBM model generally performed better in terms of PR-AUC after hyperparameter tuning.
 
-**Technical Implementation**:
-- Integration with existing vital signs monitoring equipment
-- Automated data ingestion via HL7 FHIR standards
-- Real-time dashboard with color-coded risk levels
-- Mobile notifications for on-duty nursing staff
+## Future Work
 
-**Alert Criteria**:
-- 3-day heart rate rolling mean ≥ baseline + 5 bpm
-- Blood pressure deviation > 20% from personal average
-- Temperature trend showing consistent elevation
+The project identifies several areas for future improvement:
 
-### 2. Priority Care Rounds
-**Objective**: Targeted interventions for high-risk residents
-
-**Implementation Strategy**:
-- Daily risk scoring and resident prioritization
-- Enhanced monitoring for residents with dementia, CHF, or Parkinson's
-- Structured assessment protocols for flagged residents
-- Documentation integration with existing care management systems
-
-**Resource Allocation**:
-- Additional 15-minute checks for high-risk residents
-- Specialized training for staff on early intervention techniques
-- Coordination with on-call physicians for rapid response
-
-### 3. Medication Adherence Program
-**Objective**: Maintain >90% adherence rates across all residents
-
-**Technology Solutions**:
-- Automated dispensing systems with dose tracking
-- Smart pill bottles with adherence monitoring
-- Integration with pharmacy management systems
-- Real-time adherence scoring and alerts
-
-**Clinical Protocols**:
-- Nurse-assisted dosing for residents with <80% adherence
-- Blister pack preparation for complex medication regimens
-- Regular medication reviews and simplification strategies
-
----
+*   **Advanced Imbalance Handling**: Explore other techniques beyond SMOTE, such as ADASYN, NearMiss, or ensemble methods specifically designed for imbalanced learning (e.g., BalancedBaggingClassifier, EasyEnsembleClassifier).
+*   **Data Distribution**: Investigate methods to handle non-normally distributed data, which was noted as affecting results. This could involve different scaling techniques or transformations.
+*   **More Complex Feature Engineering**: Explore more sophisticated feature interactions or time-series features (e.g., Fourier transforms for cyclical patterns, more complex lag features).
+*   **Deep Learning Models**: Consider recurrent neural networks (RNNs) or transformers for time-series data, which might capture temporal dependencies more effectively.
+*   **Explainability**: Implement techniques like SHAP or LIME to understand model predictions and identify the most influential features for incident risk.
+*   **Real-world Data**: Validate the models on real-world ALF data to assess their practical applicability and robustness.
